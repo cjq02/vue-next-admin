@@ -1,0 +1,287 @@
+$bg: #43507e;
+$light_gray: #eee;
+$cursor: #fff;
+@supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
+  .login-container .el-input input {
+    //color: $bg;
+    //&::first-line {
+    //    color: $light_gray;
+    //}
+  }
+}
+.flex {
+  display: flex;
+}
+.flex1 {
+  flex: 1;
+}
+/* reset element-ui css */
+.login-container {
+  background: url('@/assets/img/login/loginBg.png') top center no-repeat;
+  background-size: 100% 100%;
+  .lab {
+    display: inline-block;
+    min-width: 60px;
+    height: 50px;
+    line-height: 50px;
+    font-size: 16px;
+  }
+  .el-input {
+    display: inline-block;
+    height: 48px;
+    &__inner {
+      padding: 12px 5px 12px 15px;
+      border: 0;
+      border-radius: 0;
+      height: 48px;
+      appearance: none;
+      background: transparent;
+      //caret-color: $cursor;
+      font-size: 16px;
+      color: $bg !important;
+      &:-webkit-autofill {
+        //-webkit-box-shadow: 0 0 0px 1000px $bg inset !important;
+        //-webkit-text-fill-color: $cursor !important;
+      }
+    }
+    &__wrapper {
+      display: block;
+      padding: 0;
+      box-shadow: 0 0 0 1px #e5e5e5 inset;
+      &.is-focus {
+        box-shadow: 0 0 0 1px var(--el-input-focus-border-color) inset;
+      }
+    }
+  }
+  .el-form-item {
+    box-sizing: content-box;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    width: 100%;
+    height: 50px;
+    background-color: $cursor;
+    line-height: 50px;
+  }
+}
+
+$bg: #43507e;
+$dark_gray: #889aa4;
+$light_gray: #eee;
+.login-container {
+  overflow: hidden;
+  width: 100%;
+  min-height: 100%;
+  .sitename {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    padding: 0 10px;
+    border-radius: 0 0 15px;
+    height: 36px;
+    background: #066cbc;
+    line-height: 36px;
+    color: #fff;
+  }
+  .login-info {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin: 0 auto;
+    margin-top: -50px;
+    width: 50%;
+    min-width: 900px;
+    transform: translate(-50%, -50%);
+  }
+  .login-con {
+    position: relative;
+    border-radius: 10px;
+    height: 100%;
+    background: $cursor;
+    box-shadow: 1px 1px 15px 1px rgba(0, 0, 0, 0.15);
+  }
+  .login-pic {
+    position: absolute;
+    width: 48%;
+    height: 100%;
+    background: url('@/assets/img/login/login-picBg.png') top center no-repeat;
+    background-size: 100% 100%;
+    text-align: center;
+    .pic {
+      margin-left: 5%;
+      margin-top: 3%;
+      max-width: 100%;
+      max-height: 90%;
+    }
+  }
+  .login-form {
+    overflow: hidden;
+    margin: 0 auto;
+    padding: 30px 5%;
+    width: 52%;
+    height: auto;
+    .txt {
+      margin: 2% 0 5%;
+      padding-bottom: 10px;
+      text-align: left;
+      font-weight: normal;
+      font-size: 30px;
+      color: #333;
+      letter-spacing: 3px;
+    }
+    .is-error {
+      .el-form-item {
+        &__error {
+          left: 60px;
+        }
+      }
+    }
+    .imgCaptcha {
+      right: 0;
+      height: 100%;
+    }
+  }
+  .tips {
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #fff;
+    span {
+      &:first-of-type {
+        margin-right: 16px;
+      }
+    }
+  }
+  .svg-container {
+    display: inline-block;
+    padding: 6px 5px;
+    width: 25px;
+    vertical-align: middle;
+    font-size: 19px;
+    color: #889aa4;
+  }
+  .title-container {
+    position: absolute;
+    left: 5%;
+    top: 10%;
+    margin-top: -100px;
+    height: 70px;
+    .title {
+      margin: 0 auto 10px;
+      font-family: '微软雅黑';
+      font-weight: bold;
+      font-size: 36px;
+      color: $bg;
+      letter-spacing: 3px;
+    }
+    .kh {
+      margin: 10px auto;
+      padding: 3px 10px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.3);
+      text-align: center;
+      text-shadow: none;
+      font-weight: bold;
+      font-size: 16px;
+      color: red;
+    }
+    .set-language {
+      position: absolute;
+      right: 0;
+      top: 5px;
+      color: #fff;
+    }
+  }
+  .show-pwd {
+    position: absolute;
+    right: 5px;
+    top: 7px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 16px;
+    color: $dark_gray;
+  }
+  .thirdparty-button {
+    position: absolute;
+    right: 0;
+    bottom: 6px;
+  }
+  .login-btn {
+    margin: 1% auto 5%;
+    padding: 0;
+    border: none;
+    border-radius: 25px;
+    width: 100%;
+    height: 55px;
+    background: linear-gradient(180deg, #73a1f7 0%, #2c75f0 100%);
+    line-height: 55px;
+    font-size: 18px;
+    color: #fff;
+    transition: all 0.3s ease-in;
+    transition: all 0.3s ease-in;
+    transition: all 0.3s ease-in;
+    transition: all 0.3s ease-in;
+    &:hover {
+      background: linear-gradient(180deg, #2c75f0 0%, #73a1f7 100%);
+    }
+  }
+}
+.login-bottom {
+  position: absolute;
+  left: 50%;
+  bottom: 15px;
+  margin-left: -260px;
+  padding-bottom: 10px;
+  width: 520px;
+  text-align: center;
+  font-size: 14px;
+  color: $bg;
+}
+@media screen and (max-width: 1440px) {
+  .login-container {
+    .title-container {
+      margin-top: -60px;
+      .title {
+        font-size: 32px;
+      }
+    }
+    .login-info { margin-top: -10px; width: 760px; min-width: 760px; }
+    .login-pic {
+      //width: 380px;
+    }
+    .login-form {
+      //width: 380px;
+      padding: 20px 4% 15px;
+      .lab { height: 40px; line-height: 40px; font-size: 14px; }
+      .txt {
+        font-size: 24px;
+      }
+      .el-form-item {
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        height: 40px;
+        line-height: 40px;
+        &__content {
+          line-height: 40px;
+          .svg-container {
+            padding: 5px;
+            line-height: 30px;
+            font-size: 18px;
+          }
+          .el-input {
+            height: 40px;
+            &__inner {
+              height: 40px;
+              font-size: 14px;
+            }
+          }
+        }
+        .show-pwd {
+          top: 2px;
+        }
+      }
+      .login-btn {
+        height: 45px;
+        line-height: 45px;
+      }
+    }
+  }
+}

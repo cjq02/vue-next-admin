@@ -1,0 +1,82 @@
+@import './variables.scss';
+#app {
+  .sidebar-container {
+    background: $menuBg url('@/assets/img/sidebar-bg.png') no-repeat center;
+    background-size: cover;
+  }
+}
+//框架内容
+.app-wrapper {
+  .menu-wrapper {
+    .el-scrollbar__view {
+      >ul.el-menu {
+        .el-sub-menu .el-sub-menu__title,
+        .el-menu-item {
+          border-bottom: 1px solid #004685;
+          height: 50px;
+          line-height: 50px;
+          font-size: 15px;
+        }
+        .el-menu-item {
+          display: block;
+        }
+        .icon-common-menu {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          vertical-align: -3px;
+          font-size: 16px;
+          &::before {
+            content: '\e622';
+          }
+          &.icon-home::before { content: '\e7ac'; }
+          &.icon-Sys::before { content: '\e66a'; }
+          &.icon-ProjectManage::before { font-size: 14px; content: '\e63a'; }
+        }
+        >a {
+          .el-menu-item {
+            &:hover {
+              background-color: $subMenuHover !important;
+            }
+          }
+        }
+        ul {
+          .icon-common-menu {
+            margin-right: 0;
+            width: 10px;
+            &::before {
+              display: none;
+            }
+          }
+          .el-menu-item {
+            border-color: $subMenuBg;
+            min-width: $sideBarWidth !important;
+            background-color: $subMenuBg !important;
+            &:hover {
+              background-color: $subMenuHover !important;
+            }
+          }
+        }
+      }
+    }
+    .el-sub-menu__title {
+      display: block;
+      * {
+        vertical-align: middle;
+      }
+    }
+    .icon-common-menu {
+      +span {
+        margin-left: 0;
+      }
+    }
+  }
+  &.hideSidebar {
+    .menu-wrapper {
+      text-align: center;
+      .icon-common-menu + span {
+        margin-left: 0;
+      }
+    }
+  }
+}

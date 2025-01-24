@@ -1,0 +1,7 @@
+{
+  "globals": {
+    "GlobalInterface": true,
+    "Http": true,
+    "CodeModule": true
+  }
+}

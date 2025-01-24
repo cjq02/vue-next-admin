@@ -1,0 +1,8 @@
+.mce-content-body {
+    font-family: '微软雅黑', '黑体', serif;
+    font-size: 14px;
+}
+.mce-content-body img{
+    max-width: 100%;
+    height: auto;
+}

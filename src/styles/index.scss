@@ -1,0 +1,26 @@
+@import './variables.scss';
+@import './transition.scss';
+@import './scss-suger.scss';
+@import './sidebar.scss';
+@import './d2/index.scss';
+@import './common.scss';
+@import './element-style-override.scss';
+
+//scroll
+@mixin main-show-wh() {
+  width: 100%;
+  /* css 声明 */
+  height: calc(100vh - #{$navBarHeight} - #{$tagViewHeight} - #{$appMainPadding * 2});
+}
+.scroll-y {
+  @include main-show-wh();
+  overflow-y: auto;
+}
+.scroll-x {
+  @include main-show-wh();
+  overflow-x: auto;
+}
+.scroll-xy {
+  @include main-show-wh();
+  overflow: auto;
+}

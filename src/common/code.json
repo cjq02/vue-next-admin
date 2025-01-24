@@ -1,0 +1,162 @@
+{
+    "ANNOUNCE_STATUS": {
+    "typeName": "公告状态",
+    "list": [
+      {
+        "configCode": "0",
+        "configName": "未发布",
+        "remark": ""
+      },
+      {
+        "configCode": "1",
+        "configName": "已发布",
+        "remark": ""
+      }
+    ]
+  },
+  "CODE_MODIFY_STATUS": {
+    "typeName": "码表枚举匹配状态",
+    "list": [
+      {
+        "configCode": "1",
+        "configName": "枚举新增",
+        "remark": "success"
+      },
+      {
+        "configCode": "2",
+        "configName": "枚举修改",
+        "remark": "warning"
+      },
+      {
+        "configCode": "3",
+        "configName": "已同步数据",
+        "remark": "green"
+      },
+      {
+        "configCode": "4",
+        "configName": "枚举未改动",
+        "remark": "black"
+      },
+      {
+        "configCode": "5",
+        "configName": "仅存在码表",
+        "remark": "gray"
+      }
+    ]
+  },
+  "DEPARTMENT_TYPE": {
+    "typeName": "部门类型",
+    "list": [
+      {
+        "configCode": "1",
+        "configName": "管理部门",
+        "remark": ""
+      },
+      {
+        "configCode": "2",
+        "configName": "监督检查部门",
+        "remark": ""
+      },
+      {
+        "configCode": "3",
+        "configName": "生产技术部门",
+        "remark": ""
+      },
+      {
+        "configCode": "4",
+        "configName": "洗选检验部门",
+        "remark": ""
+      },
+      {
+        "configCode": "5",
+        "configName": "安全部门",
+        "remark": ""
+      },
+      {
+        "configCode": "6",
+        "configName": "管理类分管领导",
+        "remark": ""
+      },
+      {
+        "configCode": "7",
+        "configName": "技术类分管领导",
+        "remark": ""
+      },
+      {
+        "configCode": "8",
+        "configName": "领导班子",
+        "remark": ""
+      }
+    ]
+  },
+  "ERROR_CODE": {
+    "typeName": "错误代码",
+    "list": [
+      {
+        "configCode": "1000",
+        "configName": "用户会话状态失效，请重新登录！",
+        "remark": ""
+      }
+    ]
+  },
+  "FILE_BIZ_TYPE": {
+    "typeName": "文件上传类型",
+    "list": [
+      {
+        "configCode": "1",
+        "configName": "管理制度",
+        "remark": ""
+      }
+    ]
+  },
+  "IS_ACTIVE": {
+    "typeName": "启用状态",
+    "list": [
+      {
+        "configCode": "1",
+        "configName": "启用",
+        "remark": ""
+      },
+      {
+        "configCode": "0",
+        "configName": "禁用",
+        "remark": ""
+      }
+    ]
+  },
+  "ROLE_TYPE": {
+    "typeName": "角色类型",
+    "list": [
+      {
+        "configCode": "01",
+        "configName": "超级管理员",
+        "remark": ""
+      },
+      {
+        "configCode": "02",
+        "configName": "普通管理员",
+        "remark": ""
+      },
+      {
+        "configCode": "09",
+        "configName": "普通用户",
+        "remark": ""
+      }
+    ]
+  },
+  "YES_NO": {
+    "typeName": "是否",
+    "list": [
+      {
+        "configCode": "1",
+        "configName": "是",
+        "remark": ""
+      },
+      {
+        "configCode": "0",
+        "configName": "否",
+        "remark": ""
+      }
+    ]
+  }
+}
