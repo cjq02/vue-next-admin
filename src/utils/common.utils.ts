@@ -85,13 +85,13 @@ export function parseTime(time, cFormat) {
     date = new Date(time)
   }
   const formatObj = {
-    y: date.getFullYear(),
-    m: date.getMonth() + 1,
+    a: date.getDay(),
     d: date.getDate(),
     h: date.getHours(),
     i: date.getMinutes(),
+    m: date.getMonth() + 1,
     s: date.getSeconds(),
-    a: date.getDay(),
+    y: date.getFullYear(),
   }
   return format.replace(/{(y|m|d|h|i|s|a)+}/g, (result, key) => {
     let value = formatObj[key]
@@ -142,7 +142,13 @@ export const mapKeyValue = (list, key, value) => _.mapValues(_.keyBy(list, key),
 /**
  * list排除选项
  * */
-export const excludes = (list, callback) => _.without.apply(null, [list, ...list.filter(callback)])
+export const excludes = (list, callback) => _.without.apply(null, [list, ..._.filter(list, callback)])
+/**
+ * 列表转换成对象
+ *
+ * @param list
+ */
+export const arrayToObject = (list) => _.extend.apply(null, list) as any
 /**
  * 全文替换
  * */
@@ -213,7 +219,7 @@ export async function closeTab() {
   const tagsViewStore = useTagsViewStore()
   const router = menuStore.router
   const route = router.currentRoute
-  const { visitedViews } = await tagsViewStore.delView(route)
+  const { visitedViews } = (await tagsViewStore.delView(route)) as any
   const latestView = visitedViews.slice(-1)[0]
   await router.push(latestView.fullPath)
 }
@@ -268,6 +274,29 @@ export const getDateWithTime = (date, hour, minute, second) => {
   const currentDate = dayjs(date)
   return new Date(currentDate.year(), currentDate.month(), currentDate.date(), hour, minute, second)
 }
+
+/**
+ * 处理日期范围
+ *
+ * @param dateRange
+ * @param data
+ * @param options
+ */
+export const splitDateRange = (dateRange, data, options?) => {
+  const { startDateKey = 'startDate', endDateKey = 'endDate' } = options || {}
+  if (commonUtils.isEmpty(dateRange)) {
+    Object.assign(data, {
+      [endDateKey]: undefined,
+      [startDateKey]: undefined,
+    })
+  } else {
+    Object.assign(data, {
+      [endDateKey]: new Date(dateRange[1]).getTime(),
+      [startDateKey]: new Date(dateRange[0]).getTime(),
+    })
+  }
+}
+
 /**
  * 调用方法
  * */

@@ -6,6 +6,7 @@
         v-model="selectValue"
         v-bind="$attrs"
         :placeholder="placeholder"
+        :allow-create="allowCreate"
         :style="'width:100%;max-height:' + maxHeight"
         :multiple="multiple"
         value-key="value"
@@ -21,7 +22,7 @@
       >
         <div v-if="showSelectAll" style="padding: 5px 20px 10px; text-align: right">
           <el-button style="" type="primary" size="small" @click="handleSelectAll">全选</el-button>
-          <el-button style="" type="default" size="small" @click="handleSelectReset">重置</el-button>
+          <el-button style="" type="info" size="small" @click="handleSelectReset">重置</el-button>
         </div>
         <el-option v-for="item in visibleSelectOptions" :key="item.value" :label="item.label" :value="item">
           <slot v-if="slots.optionContent" name="optionContent" :item="item"></slot>
@@ -30,14 +31,13 @@
           <el-option :value="emptyOptionData" disabled style="text-align: center">无数据</el-option>
         </template>
         <div v-if="showPagination && !showEmptyTip" class="pagination pl20">
-          <!--suppress TypeScriptValidateTypes -->
           <el-pagination
             v-model:current-page="pageInfo.currentPage"
+            v-model:page-size="pageInfo.pageSize"
             size="small"
             class="tc"
             background
             layout="total, prev, pager, next"
-            :page-size="pageInfo.pageSize"
             :page-count="pageCount"
             :pager-count="pagerCount"
             :total="total"
@@ -67,6 +67,10 @@ const props = defineProps({
   actionUrl: {
     default: '',
     type: String,
+  },
+  allowCreate: {
+    default: false,
+    type: Boolean,
   },
   autoFetch: {
     default: false,
@@ -162,8 +166,6 @@ const props = defineProps({
   },
 })
 
-const { showPagination, condition } = toRefs(props)
-
 const emit = defineEmits(['update:modelValue', 'update:label', 'change'])
 
 const selectRef = ref()
@@ -181,7 +183,7 @@ const selectDropdownVisible = ref(false)
 const pageInfo = reactive({
   condition: {},
   currentPage: 1,
-  pageSize: showPagination.value ? 10 : -1,
+  pageSize: props.showPagination ? 10 : -1,
 })
 
 const visibleSelectOptions = computed(() => {
@@ -224,6 +226,7 @@ watch(
     }
   },
 )
+
 watch(
   () => props.label,
   () => {
@@ -231,6 +234,7 @@ watch(
   },
   { immediate: true },
 )
+
 const selectValue = computed({
   get: () => {
     if (currentSelectOption.value.value === '') {
@@ -246,8 +250,12 @@ const selectValue = computed({
       )
       emit('update:label', _.map(val, 'label').join(','))
     } else {
-      const modelValue = _.isUndefined(val) ? '' : val.value
-      const label = _.isUndefined(val) ? '' : val.label
+      let modelValue = _.isUndefined(val) ? '' : val.value
+      let label = _.isUndefined(val) ? '' : val.label
+      if (isEmpty(modelValue) && props.allowCreate && isNotEmpty(val)) {
+        modelValue = val
+        label = val
+      }
       emit('update:modelValue', modelValue)
       emit('update:label', label)
     }
@@ -264,7 +272,7 @@ const maxHeight = computed(() => {
 const showEmptyTip = computed(() => selectOptions.value.length === 0 && selectFocusVisible.value)
 
 watch(
-  () => condition.value,
+  () => props.condition,
   (newVal, oldVal) => {
     if (!_.isEqual(newVal, oldVal)) {
       pageInfo.condition = _.cloneDeep(newVal)
@@ -285,17 +293,17 @@ onMounted(async () => {
  * */
 async function loadSelectPage() {
   let res = {} as Http.TPageRes
-  if ($utils.isNotEmpty(props.actionUrl)) {
+  if (isNotEmpty(props.actionUrl)) {
     res = (await apiUtils.getPage(props.actionUrl, pageInfo.condition, pageInfo)) as Http.TPageRes
   } else if (typeof props.action === 'function') {
-    res = await props.action(pageInfo.condition)
+    res = await props.action(pageInfo.condition, pageInfo)
     if (!_.has(res, 'records')) {
       Object.assign(res, { records: res as any[] })
     }
   }
   loading.value = true
-  if ($utils.isResponseResult(res) && !(res as Http.IResponseResult).success) {
-    return $utils.messageUtils.showResponseMessage(res)
+  if (commonUtils.isResponseResult(res) && !(res as Http.IResponseResult).success) {
+    return messageUtils.showResponseMessage(res)
   }
   let list = res.records
   if (typeof props.processData === 'function') {
@@ -355,6 +363,7 @@ async function handleVisibleChange(visible) {
 
 function handleSelectChange(val) {
   needReload.value = true
+  console.log('handleSelectChange', val)
   emit('change', val)
 }
 
@@ -408,7 +417,7 @@ async function fetchPrev() {
  * 翻页
  * */
 async function handleCurrentChange(page) {
-  if (showPagination.value) {
+  if (props.showPagination) {
     pageInfo.currentPage = page
     await loadSelectPage()
     nextTick(() => {
@@ -437,7 +446,6 @@ function handleSelectReset() {
 }
 
 function handleKeyDown(event) {
-  console.log('handleKeyDown', event)
   if (visibleSelectOptions.value.length && event.keyCode === 38) {
     // 上箭头
     selectRef.value.$el.querySelector('.el-input .el-input__inner').focus()

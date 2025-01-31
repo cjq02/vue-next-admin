@@ -8,7 +8,7 @@ interface IPageOptions {
 
 interface ISummaryOptions {
   summaryFields?: string[]
-  getSummaryOptions?: () => string[]
+  getSummaryFields?: () => string[]
   nonSummaryFields?: string[]
   getNonSummaryFields?: () => string[]
   intFields?: string[]
@@ -18,11 +18,12 @@ interface ISummaryOptions {
   rowspanFields?: string[]
   getRowspanFields?: () => string[]
   columnProps?: any
+  needThousandSeparator?: boolean
 }
 
 const summaryMethod = ({
   summaryFields = [],
-  getSummaryOptions = undefined,
+  getSummaryFields = undefined,
   nonSummaryFields = [],
   getNonSummaryFields = undefined,
   intFields = [],
@@ -31,6 +32,7 @@ const summaryMethod = ({
   getAvgFields = undefined,
   rowspanFields = [],
   getRowspanFields = undefined,
+  needThousandSeparator = false,
   /**
    * {
    *   xxx: {
@@ -46,8 +48,8 @@ const summaryMethod = ({
     if (data.length === 0) {
       return []
     }
-    if (typeof getSummaryOptions === 'function') {
-      summaryFields = getSummaryOptions()
+    if (typeof getSummaryFields === 'function') {
+      summaryFields = getSummaryFields()
     }
     if (typeof getNonSummaryFields === 'function') {
       nonSummaryFields = getNonSummaryFields()
@@ -82,26 +84,28 @@ const summaryMethod = ({
         )
       }
       if (_.includes(intFields, column.property)) {
-        return parseInt(sum.toString())
+        sum = parseInt(sum.toString())
       }
       if (_.includes(avgFields, column.property)) {
-        return $utils.numberUtils.div(sum, data.length, precision)
+        sum = $utils.numberUtils.div(sum, data.length, precision)
       }
-      return $filters.thousandSeparator(sum, { showEmpty, precision })
+      if (needThousandSeparator) {
+        return $filters.thousandSeparator(sum, { precision, showEmpty })
+      }
+      return sum
     })
     let sumObj = {}
     if (columns.length > 0) {
       sumObj = Object.assign.apply(
         null,
-        // @ts-ignore
-        _.map(columns, (column, index) => ({ [column.property]: sumArr[index] })),
+        _.map(columns, (column, index) => ({ [column.property]: sumArr[index] })) as any,
       )
     }
     return columns.map((column, index) => {
       const { formatter = undefined } = columnProps[column.property] || {}
       const value = sumArr[index]
       if (typeof formatter === 'function') {
-        sumArr[index] = formatter({ value, sumObj, sumArr, data })
+        sumArr[index] = formatter({ data, sumArr, sumObj, value })
         return sumArr[index]
       }
       return value
@@ -118,11 +122,15 @@ export const useBasePage = function (options: IPageOptions = { summaryOptions: {
   const title = ref(route.meta.title)
 
   async function add() {
-    await formRef.value.open()
+    await formRef.value.open(null, Constants.formFlag.ADD)
   }
 
   async function edit(id) {
-    await formRef.value.open(id)
+    await formRef.value.open(id, Constants.formFlag.EDIT)
+  }
+
+  async function view(id) {
+    await formRef.value.open(id, Constants.formFlag.VIEW)
   }
 
   function remove(id) {
@@ -149,21 +157,35 @@ export const useBasePage = function (options: IPageOptions = { summaryOptions: {
 
   const searchModel = computed(() => tableRef.value?.searchModel || {})
 
+  function handleDateRangeChange(date, dateStartKey, dateEndKey) {
+    if (commonUtils.isNotEmpty(date)) {
+      Object.assign(tableRef.value.searchModel, {
+        [dateEndKey]: date[1].getTime(),
+        [dateStartKey]: date[0].getTime(),
+      })
+    } else {
+      delete tableRef.value.searchModel[dateStartKey]
+      delete tableRef.value.searchModel[dateEndKey]
+    }
+  }
+
   provide('getTableData', () => tableData.value)
 
   return {
-    formRef,
-    tableRef,
-    title,
-    tableData,
-    searchModel,
     add,
     edit,
-    remove,
-    fetchData,
-    onSaveSuccess,
     extendColumnCodeProps,
+    fetchData,
+    formRef,
+    handleDateRangeChange,
+    onSaveSuccess,
+    remove,
+    searchModel,
     summaryMethod: summaryMethod(options.summaryOptions),
+    tableData,
+    tableRef,
+    title,
+    view,
   }
 }
 
@@ -173,12 +195,12 @@ interface IEditPageOptions extends IPageOptions {
   saveListAction?: (list) => any
   getSaveData?: (rowData) => any
   getSaveListData?: () => any
-  formatRowData?: (rowData) => void
+  formatRowData?: (rowData) => any
   beforeAdd?: (rowData) => void
-  beforeAddDone?: (rowData) => void
+  beforeAddDone?: (rowData) => Promise<any>
   afterAdd?: (rowData) => void
   beforeEdit?: (rowData) => void
-  beforeEditDone?: (rowData) => void
+  beforeEditDone?: (rowData) => Promise<any>
   afterEdit?: (rowData) => void
   beforeSave?: (rowData) => void
   beforeSaveList?: () => void
@@ -262,17 +284,15 @@ export const useBaseEditPage = function (
     revertUnchangedRow()
     const rowData = {
       ...defaultRowData,
+      editMode: true,
       id: '',
       rowState: Constants.rowState.ADDED,
-      editMode: true,
     }
     if (typeof beforeAdd === 'function') {
       beforeAdd(rowData)
     }
     if (typeof beforeAddDone === 'function') {
-      await doLoading(async () => {
-        await beforeAddDone(rowData)
-      })
+      await doLoading(() => beforeAddDone(rowData))
     }
     // 新增行
     tableRef.value.insertRow(rowData)
@@ -296,15 +316,13 @@ export const useBaseEditPage = function (
       beforeEdit(rowData)
     }
     if (typeof beforeEditDone === 'function') {
-      await doLoading(async () => {
-        beforeEditDone(rowData)
-      })
+      await doLoading(() => beforeEditDone(rowData))
     }
     originRowDataMap.value[rowData.id] = _.cloneDeep(rowData)
     tableRef.value.setRowData(rowData.id, {
       ...rowData,
-      rowState: Constants.rowState.MODIFIED,
       editMode: true,
+      rowState: Constants.rowState.MODIFIED,
     })
     if (typeof afterEdit === 'function') {
       afterEdit(rowData)
@@ -316,8 +334,8 @@ export const useBaseEditPage = function (
    * */
   async function doLoading(callback) {
     const loading = Loading.service({
-      target: '.table-content',
       background: 'rgba(255,255,255,.3)',
+      target: '.table-content',
     })
     await callback()
     loading.close()
@@ -360,9 +378,9 @@ export const useBaseEditPage = function (
             const res = await saveAction!(requestData)
             await $utils.messageUtils.showResponseMessage(res)
             tableRef.value.setRowData(rowData.id, {
+              editMode: false,
               id: res.info,
               rowState: Constants.rowState.UNCHANGED,
-              editMode: false,
             })
             if (typeof afterSave === 'function') {
               afterSave(rowData)
@@ -448,19 +466,19 @@ export const useBaseEditPage = function (
   }
 
   return {
-    tableRef,
-    title,
-    saveListDisabled,
-    tableData,
-    formatData,
     add,
+    cancel,
     edit,
+    fetchData,
+    formatData,
+    onCellClick,
+    remove,
     save,
     saveList,
-    remove,
-    cancel,
-    fetchData,
-    onCellClick,
+    saveListDisabled,
     summaryMethod: summaryMethod(options.summaryOptions),
+    tableData,
+    tableRef,
+    title,
   }
 }

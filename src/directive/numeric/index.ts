@@ -29,7 +29,7 @@ export default class NumericDirective {
    * @param binding
    * */
   constructor(input, binding) {
-    Object.assign(this, { input, binding, ...this.methods })
+    Object.assign(this, { binding, input, ...this.methods })
     input.addEventListener('keydown', this)
     input.addEventListener('keyup', this)
     input.addEventListener('change', this)
@@ -79,6 +79,10 @@ export default class NumericDirective {
   ]
 
   methods = {
+    isDecimal(binding) {
+      return binding.arg === 'decimal'
+    },
+
     setValue(target, value) {
       if (target.value !== value) {
         target.value = value
@@ -87,10 +91,6 @@ export default class NumericDirective {
         event.initEvent('input', true, false, window, 0)
         target.dispatchEvent(event)
       }
-    },
-
-    isDecimal(binding) {
-      return binding.arg === 'decimal'
     },
   }
 

@@ -6,8 +6,8 @@ const useUserStore = defineStore('user', () => {
   const userInfo = ref<any>({})
 
   const token = computed(() => getToken())
-  const roles = computed(() => userInfo.value.roleTypes)
-  const permissions = computed(() => userInfo.value.permissions)
+  const roles = computed(() => userInfo.value?.roleTypes)
+  const permissions = computed(() => userInfo.value?.permissions)
 
   /*
    * 获取用户信息
@@ -16,6 +16,7 @@ const useUserStore = defineStore('user', () => {
     const res = await userApi.getUserInfo()
     userInfo.value = res.info
   }
+
   /**
    * 登录
    * */
@@ -38,6 +39,7 @@ const useUserStore = defineStore('user', () => {
     commonUtils.clearObject(userInfo.value)
     removeToken()
   }
+
   /**
    * 移除token
    * */

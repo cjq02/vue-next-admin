@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="clearfix mb10">
+    <div v-if="editable || $slots.controlsRight" class="clearfix mb10">
       <el-button
         v-if="editable"
         type="success"
@@ -23,6 +23,8 @@
       border
       v-bind="$attrs"
       :show-header="showHeader"
+      :max-height="maxHeight"
+      :height="autoHeight ? null : tableHeight"
     >
       <el-table-column v-if="editable && showOperate" label="操作" :width="defaultOperationColumnWidth" align="center">
         <template #default="scope">
@@ -34,10 +36,9 @@
             :disabled="disabledHandle"
             @click.prevent="insert(scope.row)"
           >
-            <i class="iconfont icon-trAdd"></i>
             增行
           </el-button>
-          <el-button type="primary" text size="small" :disabled="disabledHandle" @click.prevent="remove(scope.row)">
+          <el-button type="danger" text size="small" :disabled="disabledHandle" @click.prevent="remove(scope.row)">
             删除
           </el-button>
         </template>
@@ -56,56 +57,84 @@ const { proxy } = getCurrentInstance()
 
 const emit = defineEmits(['update:data', 'after-add'])
 const props = defineProps({
-  data: {
-    type: Array,
-    default: () => [],
-  },
-  formRef: {
-    type: Object,
-    default: () => {},
-  },
-  defaultRowData: {
-    type: Object,
-    default: () => {},
-  },
-  showInsertRow: {
-    type: Boolean,
-    default: false,
-  },
-  showHeader: {
-    type: Boolean,
-    default: true,
-  },
-  editable: {
-    type: Boolean,
-    default: true,
-  },
-  operationColumnWidth: {
-    type: String,
-    default: '',
-  },
-  /* 直接从列表中删除，不记录 rowState = Delete */
-  directlyDelete: {
-    type: Boolean,
-    default: false,
-  },
-  // 展示操作
-  showOperate: {
-    type: Boolean,
-    default: true,
-  },
   /**
    * 增行位置
    * */
   addRowPosition: {
-    type: String,
     default: 'top',
+    type: String,
+  },
+
+  autoHeight: {
+    default: true,
+    type: Boolean,
+  },
+
+  beforeAdd: {
+    default: null,
+    type: Function,
+  },
+
+  data: {
+    default: () => [],
+    type: Array,
+  },
+
+  defaultRowData: {
+    default: () => {},
+    type: Object,
+  },
+  /**
+   * 直接从列表中删除，不记录 rowState = Delete
+   */
+  directlyDelete: {
+    default: false,
+    type: Boolean,
+  },
+
+  editable: {
+    default: true,
+    type: Boolean,
+  },
+
+  formRef: {
+    default: () => {},
+    type: Object,
+  },
+
+  maxHeight: {
+    default: 500,
+    type: Number,
+  },
+  operationColumnWidth: {
+    default: '',
+    type: String,
+  },
+  showHeader: {
+    default: true,
+    type: Boolean,
+  },
+  showInsertRow: {
+    default: false,
+    type: Boolean,
+  },
+  /**
+   * 展示操作
+   * */
+  showOperate: {
+    default: true,
+    type: Boolean,
+  },
+
+  tableHeight: {
+    default: 500,
+    type: Number,
   },
 })
 
 const { data, formRef, defaultRowData } = toRefs(props)
 
-const tableRef = ref(null)
+const tableRef = ref()
 const disabledHandle = ref(false)
 const originTableData = ref([])
 
@@ -184,16 +213,28 @@ function delayHandler(callback) {
 }
 
 function add() {
-  delayHandler(() => {
-    if (props.addRowPosition === 'bottom') {
-      tableData.value.push(getNewRow())
-      emit('after-add', tableData.value[tableData.value.length - 1])
-    } else if (props.addRowPosition === 'top') {
-      tableData.value.unshift(getNewRow())
-      emit('after-add', tableData.value[0])
-    } else {
-      $utils.messageUtils.message.error('新增失败，未配置增行方向！')
-    }
+  if (_.isFunction(props.beforeAdd) && !props.beforeAdd()) {
+    return
+  }
+  if ($utils.isEmpty(tableData.value)) {
+    tableData.value = []
+  }
+  nextTick(() => {
+    delayHandler(() => {
+      /* console.log('tableData.value', tableData.value)*/
+      if (props.addRowPosition === 'bottom') {
+        tableData.value.push(getNewRow())
+        nextTick(() => {
+          tableRef.value.setScrollTop(tableRef.value.$el.querySelector('.el-table__body').scrollHeight)
+        })
+        emit('after-add', tableData.value[tableData.value.length - 1])
+      } else if (props.addRowPosition === 'top') {
+        tableData.value.unshift(getNewRow())
+        emit('after-add', tableData.value[0])
+      } else {
+        $utils.messageUtils.message.error('新增失败，未配置增行方向！')
+      }
+    })
   })
 }
 
@@ -213,8 +254,8 @@ async function remove(rowData) {
   }
   try {
     await proxy.$confirm('确定删除该记录?', '提示', {
-      confirmButtonText: '确定',
       cancelButtonText: '取消',
+      confirmButtonText: '确定',
       type: 'warning',
     })
     const deleteRow = _.find(tableData.value, { id })
@@ -228,5 +269,5 @@ async function remove(rowData) {
   }
 }
 
-defineExpose({ tableData, dataExcludeDelete, add, addList, insert, remove })
+defineExpose({ add, addList, dataExcludeDelete, insert, remove, tableData })
 </script>

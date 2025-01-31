@@ -7,7 +7,8 @@
     element-loading-text="正在上传文件，请稍候..."
     element-loading-background="rgba(255, 255, 255, 0.9)"
     class="multi-upload"
-    :action="apiUtils.uploadUrl"
+    :headers="apiUtils.getJwtHeaders()"
+    :action="apiUtils.UPLOAD_URL"
     :before-upload="beforeUpload"
     :on-success="handleUploadSuccess"
     :on-error="handleUploadError"
@@ -163,7 +164,7 @@ watchEffect(() => {
     return {
       id: file.id,
       name: file.fileName,
-      url: `${apiUtils.downloadUrl}?id=${file.id}`,
+      url: `${apiUtils.DOWNLOAD_URL}?id=${file.id}`,
     }
   })
 })

@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper ref="formWrapper" title="码表对比">
+  <FormWrapper ref="formWrapperRef" title="码表对比">
     <template #container>
       <el-row class="inner-box">
         <el-col :span="6" class="p10">
@@ -61,7 +61,7 @@ const right = reactive({
 async function open(typeCode, typeName, compareFlag) {
   Object.assign(model, { typeCode, typeName })
   btnSyncDataVisible.value = compareFlag === Constants.codeCompareFlag.LOCAL_VS_REMOTE
-  formWrapper.value.open()
+  formWrapperRef.value.open()
   left.title = compareFlag.leftTitle
   right.title = compareFlag.rightTitle
   if (compareFlag === Constants.codeCompareFlag.ENUM_VS_CODE) {
@@ -152,7 +152,7 @@ async function syncData() {
   await messageUtils.showResponseMessage(res).catch((e) => {
     throw e
   })
-  formWrapper.value.back()
+  formWrapperRef.value.back()
   emit('saveSuccess')
 }
 

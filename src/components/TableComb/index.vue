@@ -8,14 +8,18 @@
             <!--基础查询-->
             <slot name="baseSearchForm" :form="searchModel" />
             <!--高级查询-->
-            <span v-show="showAdvancedSearch">
-              <slot name="advancedSearchForm" :form="searchModel" />
-            </span>
-            <span v-if="showSearchButton" :class="btnSearchFloat" style="display: inline-block; margin-top: 5px">
-              <el-button class="ml20" type="primary" size="small" @click="search">查询</el-button>
-              <el-button class="ml10" size="small" @click="reset">重置</el-button>
+            <slot v-if="slots.advancedSearchForm && showAdvancedSearch" name="advancedSearchForm" :form="searchModel" />
+            <!--查询/重置-->
+            <span
+              v-if="showSearchControlsBtn"
+              :class="btnSearchFloat"
+              style="display: inline-block; margin-right: 5px; margin-top: 5px"
+            >
+              <slot name="controlsSearchBtn" />
+              <el-button v-if="showSearchBtn" class="ml20" type="primary" size="small" @click="search">查询</el-button>
+              <el-button v-if="showSearchBtn" class="ml10" size="small" @click="reset">重置</el-button>
               <el-link
-                v-if="existsAdvancedSearch"
+                v-if="slots.advancedSearchForm"
                 class="ml20"
                 type="primary"
                 :underline="false"
@@ -36,17 +40,23 @@
       </div>
     </section>
     <!-- 控制按钮 -->
-    <section v-if="showControls" class="clearfix mb15 control-btn-box" :class="showSearchForm ? 'mt20' : ''">
+    <section
+      v-if="showControls"
+      class="clearfix control-btn-box"
+      :style="showSearchForm ? 'padding:15px 0 10px 0' : 'padding:0 0 10px 0'"
+    >
       <slot name="controlsLeft" />
       <slot name="controlsCenter" />
       <!--class="controls-center"-->
-      <slot name="controlsRight" />
-      <div v-if="showDefaultControlsRight" class="fr">
-        <el-button type="primary" size="small" plain @click="exportTable">
-          <svg-icon icon-class="link" class-name="el-icon--left" />
-          导出
-        </el-button>
-        <el-button type="primary" size="small" plain icon="printer" @click="printTable()">打印</el-button>
+      <div class="fr">
+        <slot name="controlsRight" />
+        <div v-if="showDefaultControlsRight" class="fr vt">
+          <el-button class="vt" type="primary" size="small" plain @click="exportTable">
+            <svg-icon icon-class="link" class-name="el-icon--left" />
+            导出
+          </el-button>
+          <el-button class="vt" type="primary" size="small" plain icon="printer" @click="printTable()">打印</el-button>
+        </div>
       </div>
     </section>
     <!--数据表格-->
@@ -56,13 +66,14 @@
           <el-table
             ref="tableRef"
             v-loading="loading"
+            element-loading-text="数据正在加载，请稍候..."
             class="m-table"
             :data="tableData"
             border
             stripe
             style="width: 100%"
-            :max-height="maxHeight"
-            :height="tableHeight"
+            :max-height="defaultMaxHeight"
+            :height="props.autoHeight ? undefined : defaultTableHeight"
             :span-method="spanMethod"
             :highlight-current-row="highlight"
             :default-expand-all="defaultExpandAll"
@@ -71,11 +82,14 @@
             :show-summary="showSummary"
             :summary-method="summaryMethod"
             :row-class-name="rowClassName"
+            :scrollbar-always-on="scrollbarAlwaysOn"
+            :header-cell-style="headerCellStyle"
             @select="checkedOne"
             @select-all="checkedAll"
             @sort-change="handleSortChange"
             @clear-selection="clearSelection"
             @current-change="currentChange"
+            @row-click="rowClick"
           >
             <slot name="tableColumns" />
           </el-table>
@@ -87,7 +101,7 @@
       <div class="checked-items">
         <transition-group tag="div" name="scale" mode="out-in">
           <span v-for="item in checkedItems" :key="'checkedItem_' + item[customId]">
-            {{ item[props.checkedDisplayName] || item[customId] }}
+            {{ item[checkedDisplayName] || item[customId] }}
             <i @click="removeCheckedItem(item)" />
           </span>
         </transition-group>
@@ -123,18 +137,18 @@ import ExcelUtils from '@/utils/excel.utils'
 
 import { baseProps } from './props'
 
+const slots = useSlots()
 const router = useRouter()
 const props = defineProps(baseProps)
 const {
   showSearchForm,
   baseSearchModel,
   btnSearchFloat,
-  showSearchButton,
-  existsAdvancedSearch,
   showControls,
   showTable,
   tableRules,
   spanMethod,
+  headerCellStyle,
   highlight,
   defaultExpandAll,
   rowKey,
@@ -145,8 +159,11 @@ const {
   showMultipleChecked,
   customId,
   hasLeftPart,
+  showSearchControlsBtn,
+  showSearchBtn,
   showDefaultControlsRight,
   showPagination,
+  scrollbarAlwaysOn,
   pageSize,
   pageSizes,
 } = toRefs(props)
@@ -156,20 +173,21 @@ const emit = defineEmits([
   'checked-item-change',
   'table-mounted',
   'current-change',
+  'row-click',
   'remove-success',
   'search-model-reset',
   'after-fetch-data',
 ])
 
-const searchFormRef = ref(null)
-const tableRef = ref(null)
-const tableFormRef = ref(null)
+const searchFormRef = ref()
+const tableRef = ref()
+const tableFormRef = ref()
 const loading = ref(true)
-const checkedItems = ref([])
+const checkedItems = ref<any>([])
 const totalRecord = ref(0)
 const showAdvancedSearch = ref(false)
-const tableHeight = ref(300)
-const maxHeight = ref(650)
+const defaultTableHeight = ref(300)
+const defaultMaxHeight = ref(650)
 // 页面开始加载时不监听查询条件变化，解决刚进页面加载两次的问题
 const startWatchSearchModel = ref(false)
 
@@ -178,21 +196,21 @@ const tableModel = reactive({
 })
 const searchModel = reactive({})
 const sortInfo = reactive({
-  sortType: '',
   sortBy: '',
+  sortType: '',
 })
 
 const pageInfo = reactive({
-  pageSize: pageSize.value,
   currentPage: 1,
+  pageSize: pageSize.value,
+  summaryRecord: {},
 })
 
-const tableData = computed({
+const tableData = computed<any>({
   get() {
     return tableModel.tableData
   },
-  set(value) {
-    tableModel.tableData = value
+  set(value) {    tableModel.tableData = value
   },
 })
 
@@ -244,11 +262,15 @@ onMounted(() => {
   Object.assign(pageInfo, sortInfo)
   if (showTable.value) {
     nextTick(() => {
-      tableRef.value.doLayout()
+      if (tableRef.value) {
+        tableRef.value.doLayout()
+      }
       setTableHeight()
       // noinspection JSValidateTypes
       window.onresize = _.debounce(() => {
-        tableRef.value.doLayout()
+        if (tableRef.value) {
+          tableRef.value.doLayout()
+        }
       }, 300)
     })
   }
@@ -262,27 +284,35 @@ onUnmounted(() => {
 function setTableHeight() {
   if (showTable.value) {
     if (props.fixedHeight) {
-      tableHeight.value = props.fixedHeight
+      defaultTableHeight.value = props.fixedHeight
       return
     }
     let bottomOffset
     let topOffset
     if (props.bottomOffsetHeight === -1) {
-      bottomOffset = props.showPagination ? 80 : 28
+      bottomOffset = props.showPagination ? 68 : 25
     } else {
       bottomOffset = props.bottomOffsetHeight
     }
-    if (props.topOffsetHeight === -1) {
-      topOffset = tableRef.value.$el.getBoundingClientRect().top
-    } else {
-      topOffset = props.topOffsetHeight
-    }
-    if (tableRef.value.$el) {
-      tableHeight.value = window.innerHeight - topOffset - bottomOffset
-      maxHeight.value = tableHeight.value
-      if (tableHeight.value < 300) {
-        tableHeight.value = maxHeight.value = 300
+    if (props.maxHeight === -1 && props.tableHeight === -1) {
+      if (props.topOffsetHeight === -1) {
+        topOffset = tableRef.value.$el.getBoundingClientRect().top
+      } else {
+        topOffset = props.topOffsetHeight
       }
+      if (tableRef.value.$el) {
+        defaultTableHeight.value = window.innerHeight - topOffset - bottomOffset
+        defaultMaxHeight.value = defaultTableHeight.value
+        if (defaultTableHeight.value < 300) {
+          defaultTableHeight.value = defaultMaxHeight.value = 300
+        }
+      }
+    }
+    if (props.maxHeight !== -1) {
+      defaultMaxHeight.value = props.maxHeight
+    }
+    if (props.tableHeight !== -1) {
+      defaultTableHeight.value = props.tableHeight
     }
   }
 }
@@ -306,6 +336,10 @@ function handleSortChange({ column, prop, order }) {
   nextTick(() => {
     fetchData()
   })
+}
+// 行点击
+function rowClick(rowData) {
+  emit('row-click', rowData)
 }
 
 function clearSelection() {
@@ -435,17 +469,16 @@ async function remove(id) {
     if (!props.removeAction) {
       return $utils.messageUtils.showResponseErrorMessage('删除失败，因为对应的Action没有设置！')
     }
-    if (_.isEmpty(props.removeActionUrl)) {
-      return $utils.messageUtils.showResponseErrorMessage('删除失败，因为对应的ActionUrl没有设置！')
-    }
     await MessageBox.confirm('确定删除该记录?', '提示', {
-      confirmButtonText: '确定',
       cancelButtonText: '取消',
+      confirmButtonText: '确定',
       type: 'warning',
     })
     loading.value = true
-    return props
-      .removeAction(id, props.removeActionUrl)
+    const removeActionExecutor = commonUtils.isEmpty(props.removeActionUrl)
+      ? props.removeAction(id)
+      : props.removeAction(props.removeActionUrl, id)
+    return removeActionExecutor
       .then((res) => {
         if (!res.success) {
           return $utils.messageUtils.showResponseErrorMessage(res.message)
@@ -539,6 +572,7 @@ function fetchData(pageIndex?) {
     $utils.messageUtils.message.error('获取数据失败，因为对应的Action没有设置')
     return
   }
+
   pageInfo.currentPage = pageIndex || pageInfo.currentPage || 1
   if (!props.showPagination) {
     pageInfo.pageSize = props.noPageSize
@@ -548,33 +582,34 @@ function fetchData(pageIndex?) {
     return
   }
   loading.value = true
-  const callback = (pageInfo) => {
-    if (_.has(pageInfo, 'success') && !pageInfo.success) {
-      throw pageInfo
+  const callback = (res) => {
+    if (_.has(res, 'success') && !res.success) {
+      throw res
     }
     // 处理数据
     if (props.formatData && typeof props.formatData === 'function') {
-      tableData.value = props.formatData(pageInfo.records)
+      tableData.value = props.formatData(res.records)
     } else {
-      tableData.value = pageInfo.records
+      tableData.value = res.records
     }
-    if ($utils.isNotEmpty(pageInfo.records)) {
-      totalRecord.value = pageInfo.totalRecord || pageInfo.records.length
+    if (res.records !== undefined && $utils.isNotEmpty(res.records)) {
+      totalRecord.value = res.totalRecord || res.records.length
     } else {
       totalRecord.value = 0
     }
+    pageInfo.summaryRecord = res.summaryRecord
 
     // 设置已选择项目
     nextTick(() => {
       initRecordChecked()
-      if (showTable.value) {
+      if (showTable.value && tableRef.value) {
         tableRef.value.doLayout()
       }
       if (props.afterFetchData && typeof props.afterFetchData === 'function') {
         props.afterFetchData(tableData.value)
       }
       emit('after-fetch-data', tableData.value)
-      if (showTable.value) {
+      if (showTable.value && tableRef.value) {
         tableRef.value.setScrollTop(0)
       }
     })
@@ -588,22 +623,21 @@ function fetchData(pageIndex?) {
     }
   }
   if (props.getAction && typeof props.getAction === 'function') {
+    const getActionExecutor = commonUtils.isEmpty(props.actionUrl)
+      ? props.getAction(condition, pageInfo)
+      : props.getAction(props.actionUrl, condition, pageInfo)
     // 请求数据
-    return props
-      .getAction(props.actionUrl, condition, pageInfo)
-      .then(callback)
-      .catch((error) => {
-        console.error('error', error)
-        let errorMsg = '获取数据列表失败'
-        if ($utils.isNotEmpty(error.message)) {
-          errorMsg = errorMsg.concat(`：${error.message}`)
-        }
-        $utils.messageUtils.message.error(errorMsg)
-        loading.value = false
-        if (props.afterFetchData && typeof props.afterFetchData === 'function') {
-          props.afterFetchData(tableData.value)
-        }
-      })
+    return getActionExecutor.then(callback).catch((error) => {
+      let errorMsg = '获取数据列表失败'
+      if ($utils.isNotEmpty(error.message)) {
+        errorMsg = errorMsg.concat(`：${error.message}`)
+      }
+      $utils.messageUtils.message.error(errorMsg)
+      loading.value = false
+      if (props.afterFetchData && typeof props.afterFetchData === 'function') {
+        props.afterFetchData(tableData.value)
+      }
+    })
   }
 }
 
@@ -624,6 +658,7 @@ function getSearchCondition() {
       }
     }
   }
+  // 添加自定义条件
   const extraCondition = typeof props.getExtraCondition === 'function' ? props.getExtraCondition() : {}
   // 添加自定义条件
   Object.assign(condition, props.getActionWhere, extraCondition)
@@ -686,7 +721,7 @@ function setCurrentRow(index) {
  * 获取行数据
  * */
 function getRowData(id) {
-  return _.find(tableData.value, { id })
+  return _.find(tableData.value, { id }) as any
 }
 
 /**
@@ -717,26 +752,39 @@ function exportTable() {
 function printTable() {
   ExcelUtils.printHTML(tableRef.value.$el)
 }
+function clearValidate() {
+  setTimeout(() => {
+    tableFormRef.value?.clearValidate()
+  }, 100)
+}
 
+function getLoading(flag) {
+  loading.value = flag
+}
 defineExpose({
-  searchFormRef,
-  tableFormRef,
-  tableData,
-  searchModel,
-  fetchData,
-  edit,
-  remove,
-  removeBatch,
-  insertRow,
-  deleteRow,
-  setCurrentRow,
-  getRowData,
-  setRowData,
-  exportTable,
-  printTable,
-  removeAllCheckedItem,
   checkedItems,
+  clearValidate,
+  deleteRow,
+  edit,
+  exportTable,
+  fetchData,
+  getLoading,
+  getRowData,
+  insertRow,
   pageInfo,
+  printTable,
+  remove,
+  removeAllCheckedItem,
+  removeBatch,
+  reset,
+  search,
+  searchFormRef,
+  searchModel,
+  setCurrentRow,
+  setRowData,
+  startWatchSearchModel,
+  tableData,
+  tableFormRef,
 })
 </script>
 
@@ -750,13 +798,6 @@ defineExpose({
 }
 .w-table {
   position: relative;
-  .el-table th .thead-cell + .caret-wrapper {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    margin-top: -17px;
-    cursor: pointer;
-  }
   .dragging_column {
     &::after {
       position: absolute;
@@ -792,6 +833,20 @@ defineExpose({
     }
   }
   .el-table {
+    th {
+      .caret-wrapper {
+        width: 12px;
+        cursor: pointer;
+        .sort-caret {
+          left: 3px;
+        }
+      }
+    }
+    td {
+      .el-button + .el-button {
+        margin-left: 10px;
+      }
+    }
     .fixed-t {
       top: 0 !important;
     }
@@ -817,7 +872,7 @@ defineExpose({
       .el-table {
         &--border,
         &--group {
-          border-color: #e5e5e5;
+          border-color: var(--el-table-border-color);
         }
         &__empty-block {
           border-color: #ebeef5;
@@ -825,20 +880,14 @@ defineExpose({
         th {
           background: #f4f5f6 !important;
           &.is-leaf {
-            border-color: #ebeef5;
+            border-color: var(--el-table-border-color) !important;
           }
         }
         td {
-          border-color: #ebeef5;
+          border-color: var(--el-table-border-color);
         }
       }
     }
-  }
-}
-.el-scrollbar__thumb {
-  opacity: 0.6;
-  &:hover {
-    opacity: 1;
   }
 }
 </style>

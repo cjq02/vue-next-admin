@@ -1,8 +1,24 @@
 <!--suppress JSCheckFunctionSignatures -->
 <template>
-  <el-form-item v-bind="$attrs" :label="displayLabel" :prop="prop" :rules="customRules" :label-width="labelWidth">
-    <slot v-if="editable" :prop="prop" :prop-name="propName" :code-list="codeList" :unit="unit"></slot>
-    <slot v-else-if="slots.content" name="content" :prop="prop" :unit="unit"></slot>
+  <el-form-item
+    v-bind="$attrs"
+    :label="displayLabel"
+    :prop="prop"
+    :rules="customRules"
+    :label-width="labelWidth"
+    :class="{ 'edit-disabled': !editable }"
+    class="edit-item"
+  >
+    <slot
+      v-if="editable"
+      :prop="prop"
+      :prop-name="propName"
+      :prop-key="propKey"
+      :code="code"
+      :code-list="codeList"
+      :unit="unit"
+    ></slot>
+    <slot v-else-if="slots.content" name="content" :prop="prop" :prop-key="propKey" :unit="unit"></slot>
     <tooltip-over v-else :content="content" :unit="unit" />
   </el-form-item>
 </template>
@@ -13,70 +29,82 @@ export default {
 </script>
 <script setup lang="ts">
 const slots = useSlots()
-const store = useStore()
+const codeStore = useCodeStore()
 
 const props = defineProps({
+  code: {
+    default: '',
+    type: String,
+  },
+  dateFormat: {
+    default: '',
+    type: String,
+  },
   editable: {
-    type: Boolean,
     default: true,
-  },
-  model: {
-    type: Object,
-    default: () => ({}),
-  },
-  prop: {
-    type: String,
-    default: '',
-  },
-  propName: {
-    type: String,
-    default: '',
+    type: Boolean,
   },
   label: {
-    type: String,
     default: '',
-  },
-  rules: {
-    type: [Object, Array],
-    default: () => [],
-  },
-  code: {
     type: String,
-    default: '',
-  },
-  unit: {
-    type: String,
-    default: '',
   },
   labelWidth: {
-    type: String,
     default: '',
+    type: String,
+  },
+  model: {
+    default: () => ({}),
+    type: Object,
+  },
+  prop: {
+    default: '',
+    type: String,
+  },
+  propName: {
+    default: '',
+    type: String,
+  },
+  rules: {
+    default: () => [],
+    type: [Object, Array],
+  },
+  unit: {
+    default: '',
+    type: String,
   },
 })
 
 const content = computed(() => {
-  if ($utils.isNotEmpty(props.propName)) {
+  if (commonUtils.isNotEmpty(props.propName)) {
     return props.model[props.propName]
   }
-  if ($utils.isNotEmpty(props.code)) {
-    return store.code.maps[props.code][props.model[props.prop]]
+  if (commonUtils.isNotEmpty(props.code)) {
+    return codeStore.maps[props.code][props.model[propKey.value]]
   }
-  if (props.prop.includes('.')) {
-    return getDescendantProp(props.model, props.prop)
+  if (commonUtils.isNotEmpty(props.dateFormat)) {
+    return $filters.dateFormat(props.model[propKey.value], props.dateFormat)
   }
-  return props.model[props.prop]?.toString()
+  return props.model[propKey.value]
 })
 
-const codeList = computed(() => store.code.lists[props.code])
+const propKey = computed(() => {
+  if (props.prop.includes('.')) {
+    const propList = props.prop.split('.')
+    return propList[propList.length - 1]
+  }
+  return props.prop
+})
 
-const displayLabel = computed(() => ($utils.isEmpty(props.label) ? '' : props.label + ':'))
+const codeList = computed(() => codeStore.lists[props.code])
 
-const customRules = computed(() => (props.editable ? props.rules : []))
+const displayLabel = computed(() => (commonUtils.isEmpty(props.label) ? '' : props.label + ':'))
 
-function getDescendantProp(obj, desc) {
-  const arr = desc.split('.')
-  // noinspection StatementWithEmptyBodyJS
-  while (arr.length && (obj = obj[arr.shift()]));
-  return obj
-}
+const customRules = computed<any>(() => (props.editable ? props.rules : []))
 </script>
+<style lang="scss" scoped>
+.edit-disabled {
+  &.el-form-item {
+    margin-bottom: 0 !important;
+  }
+}
+</style>

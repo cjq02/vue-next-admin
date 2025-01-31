@@ -43,7 +43,11 @@ const useCodeStore = defineStore('code', () => {
     })
   }
 
-  return { codeMap, getCodeInfo, getName, keyMaps, lists, loadCodeMap, maps }
+  function getByCode(typeCode, configCode) {
+    return _.find(lists.value[typeCode], { configCode })
+  }
+
+  return { codeMap, getByCode, getCodeInfo, getName, keyMaps, lists, loadCodeMap, maps }
 })
 
 export default useCodeStore

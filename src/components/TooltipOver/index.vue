@@ -4,7 +4,7 @@
       class="item"
       effect="dark"
       :disabled="isShowTooltip"
-      :content="content"
+      :content="content?.toString()"
       placement="top"
       popper-class="text-tooltip-con"
     >
@@ -25,12 +25,12 @@ export default {
 <script setup lang="ts">
 defineProps({
   content: {
-    type: [String, Number],
     default: '',
+    type: [String, Number],
   },
   unit: {
-    type: String,
     default: '',
+    type: String,
   },
 })
 

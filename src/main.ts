@@ -30,10 +30,9 @@ import router from './router'
 const app = createApp(App)
 global(app)
 app.use(createPinia())
-/*app.use(ElementPlus, {
+app.use(ElementPlus, {
   locale: zhCn,
-})*/
-app.use(ElementPlus)
+})
 app.use(components)
 app.use(router)
 directive(app)

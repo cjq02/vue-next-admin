@@ -1,5 +1,5 @@
 <template>
-  <FormWrapper ref="formWrapper" :title="title" @after-back="afterBack">
+  <FormWrapper ref="formWrapperRef" :title="title" @after-back="afterBack">
     <template #container>
       <div class="form-box">
         <el-form
@@ -201,7 +201,7 @@ const options = {
 }
 
 // noinspection JSUnusedGlobalSymbols
-const { formWrapper, formRef, model, title, save, back, afterBack } = useBaseForm(options, emit)
+const { formWrapperRef, formRef, model, title, save, back, afterBack } = useBaseForm(options, emit)
 
 const { baseFormRules } = useValidator(formRef, model)
 
@@ -222,8 +222,8 @@ const rules = reactive({
 async function open({ typeCode, isEnum = FALSE } = {}) {
   const formFlag = !_.isEmpty(typeCode) ? Constants.formFlag.EDIT : Constants.formFlag.ADD
   editable.value = isEnum === FALSE
-  formWrapper.value.formFlag = formFlag
-  formWrapper.value.open()
+  formWrapperRef.value.formFlag = formFlag
+  formWrapperRef.value.open()
   if (formFlag === Constants.formFlag.EDIT) {
     model.codeList = _.map(await $api.sys.codeApi.findCodeList(typeCode), (item) => {
       return Object.assign(item, { rowState: Constants.rowState.UNCHANGED })

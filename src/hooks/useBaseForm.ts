@@ -1,7 +1,9 @@
+import { Ref } from 'vue'
+
 export const baseEmits = ['after-open', 'save-success', 'after-back']
 
 interface IFormOptions {
-  defaultFormData: any
+  defaultFormData?: any
   getAction?: (id) => any
   getActionParams?: (params) => any
   saveAction?: (id) => any
@@ -23,7 +25,8 @@ interface ISaveOptions {
 }
 
 export interface IFormResult {
-  formWrapper?: any
+  editable?: Ref<boolean>
+  formWrapperRef?: any
   formRef?: any
   title?: Ref<string>
   model?: any
@@ -31,6 +34,7 @@ export interface IFormResult {
   basePageTableData?: any
   loading?: Ref<boolean>
   open?: (id?: string, formFlag?: string, openOptions?: any) => Promise<any>
+  initForm?: any
   loadData?: (id: string) => void
   save?: (options?: ISaveOptions) => Promise<any>
   submit?: (options?: ISaveOptions) => void
@@ -38,6 +42,70 @@ export interface IFormResult {
   back?: () => void
   afterBack?: () => void
   saveLoading?: Ref<boolean>
+}
+
+export function useBaseFormWrapper(options, emit) {
+  const { afterOpen } = options || {}
+
+  const route = useRoute()
+
+  const formWrapperRef = ref()
+  const openParams = ref({})
+  const loading = ref(true)
+
+  const title = computed(() => {
+    const title = route.meta.title!.toString()
+    if (['管理', '维护', '配置'].some((str) => title.endsWith(str))) {
+      return title.slice(0, -2)
+    }
+    return title
+  })
+
+  async function open(id, formFlag, openOptions?) {
+    const { showFormFlag = true, idKeyName = 'id', params = {}, initForm } = openOptions || {}
+
+    loading.value = false
+    openParams.value = params
+    if ($utils.isEmpty(formFlag)) {
+      formFlag = _.isEmpty(id) ? Constants.formFlag.ADD : Constants.formFlag.EDIT
+    }
+    if (showFormFlag) {
+      formWrapperRef.value.formFlag = formFlag
+    }
+    formWrapperRef.value.open()
+
+    if (typeof initForm === 'function') {
+      loading.value = _.includes([Constants.formFlag.VIEW, Constants.formFlag.EDIT], formFlag)
+      await nextTick(async () => {
+        await initForm({ formFlag, id, idKeyName, params })
+        loading.value = false
+      })
+    }
+
+    if (typeof afterOpen === 'function') {
+      await nextTick(() => {
+        afterOpen(formFlag)
+      })
+    }
+  }
+
+  function back() {
+    formWrapperRef.value?.back()
+  }
+
+  function afterBack() {
+    emit('after-back')
+  }
+
+  return {
+    afterBack,
+    back,
+    formWrapperRef,
+    loading,
+    open,
+    openParams,
+    title,
+  }
 }
 
 export function useBaseForm(options?: IFormOptions, emit?): IFormResult {
@@ -58,12 +126,9 @@ export function useBaseForm(options?: IFormOptions, emit?): IFormResult {
   // @ts-ignore
   const basePageTableData = computed(() => getTableData())
 
-  const route = useRoute()
-  const loading = ref(true)
   const saveLoading = ref(false)
-  const formWrapper = ref()
   const formRef = ref()
-  const openParams = ref({})
+  const editable = ref(false)
 
   const state = reactive({
     idKeyName: 'id',
@@ -73,29 +138,28 @@ export function useBaseForm(options?: IFormOptions, emit?): IFormResult {
     ...defaultFormData,
   })
 
-  const title = computed(() => {
-    const title = route.meta.title!.toString()
-    if (['管理', '维护', '配置'].some((str) => title.endsWith(str))) {
-      return title.slice(0, -2)
-    }
-    return title
-  })
+  const formWrapperOptions = {
+    afterOpen,
+  }
 
-  async function open(id, formFlag, openOptions?) {
-    const { showFormFlag = true, idKeyName = 'id', params = {} } = openOptions || {}
-    if ($utils.isEmpty(formFlag)) {
-      formFlag = _.isEmpty(id) ? Constants.formFlag.ADD : Constants.formFlag.EDIT
-    }
-    if (showFormFlag) {
-      formWrapper.value.formFlag = formFlag
-    }
-    formWrapper.value.open()
-    state.idKeyName = idKeyName
-    model[idKeyName] = id
-    openParams.value = params
-    if (_.includes([Constants.formFlag.VIEW, Constants.formFlag.EDIT], formFlag)) {
+  const {
+    afterBack: baseAfterBack,
+    back,
+    formWrapperRef,
+    loading,
+    open: baseOpen,
+    openParams,
+    title,
+  } = useBaseFormWrapper(formWrapperOptions, emit)
+
+  async function initForm(options) {
+    const { id, idKeyName = 'id', formFlag } = options || {}
+    editable.value = _.includes([Constants.formFlag.ADD, Constants.formFlag.EDIT], formFlag)
+    if (formFlag !== Constants.formFlag.ADD) {
+      state.idKeyName = idKeyName
+      model[idKeyName] = id
       await loadData(model[idKeyName]).finally(() => {
-        if ($utils.isEmpty(model[idKeyName])) {
+        if (commonUtils.isEmpty(model[idKeyName])) {
           model[idKeyName] = id
         }
         setTimeout(() => {
@@ -106,14 +170,15 @@ export function useBaseForm(options?: IFormOptions, emit?): IFormResult {
       if (typeof afterLoadData === 'function') {
         await afterLoadData(model[idKeyName])
       }
-    } else {
-      loading.value = false
     }
-    if (typeof afterOpen === 'function') {
-      await nextTick(() => {
-        afterOpen(model[idKeyName], formFlag)
-      })
+  }
+
+  async function open(id, formFlag, openOptions?) {
+    if (commonUtils.isEmpty(openOptions)) {
+      openOptions = {}
     }
+    openOptions.initForm = initForm
+    await baseOpen(id, formFlag, openOptions)
   }
 
   async function loadData(id = model[state.idKeyName]) {
@@ -128,7 +193,7 @@ export function useBaseForm(options?: IFormOptions, emit?): IFormResult {
 
   function resetForm() {
     formRef.value?.resetFields()
-    $utils.clearObjectValue(model)
+    commonUtils.clearObjectValue(model)
     Object.assign(model, defaultFormData)
   }
 
@@ -152,6 +217,8 @@ export function useBaseForm(options?: IFormOptions, emit?): IFormResult {
           }
         }
       }
+      const requestData = _.isFunction(getSaveData) ? getSaveData({ data: model, isSubmit }) : model
+      console.log('save data', requestData)
       formRef.value.clearValidate()
       if (!skipValidate) {
         await formRef.value.validate().catch((e) => {
@@ -169,7 +236,6 @@ export function useBaseForm(options?: IFormOptions, emit?): IFormResult {
         await $utils.messageUtils.confirm(submitConfirmMessage)
       }
       saveLoading.value = true
-      const requestData = _.isFunction(getSaveData) ? getSaveData({ data: model, isSubmit }) : model
       const res = await saveAction!(requestData)
       await $utils.messageUtils.showResponseMessage(res).catch((e) => {
         throw e
@@ -202,22 +268,19 @@ export function useBaseForm(options?: IFormOptions, emit?): IFormResult {
     return save({ isSubmit: true, savedThenBack: true, ...options })
   }
 
-  function back() {
-    formWrapper.value?.back()
-  }
-
   function afterBack() {
     resetForm()
-    loading.value = true
-    emit('after-back')
+    baseAfterBack()
   }
 
   return {
     afterBack,
     back,
     basePageTableData,
+    editable,
     formRef,
-    formWrapper,
+    formWrapperRef,
+    initForm,
     loadData,
     loading,
     model,

@@ -61,12 +61,17 @@ const getTableDom = (tableEl) => {
 
   removeSpecifyColumns(headers, (th) => th.innerText === '操作')
   removeSpecifyColumns(headers, (th) => th.style.display === 'none')
+  _.each(headers, (th) => {
+    th.innerHTML = th.innerText
+  })
 
   const tdList = tableDom.querySelector('tbody').querySelectorAll('td')
   _.each(removeByClsList, (cls) => {
     removeSpecifyColumns(tdList, (td) => td.className.split(' ').includes(cls))
   })
-
+  _.each(tdList, (td) => {
+    td.innerHTML = td.innerText
+  })
   return tableDom
 }
 

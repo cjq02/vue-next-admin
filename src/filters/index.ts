@@ -1,14 +1,4 @@
 export default {
-  dateFormat(value, format = 'YYYY-MM-DD HH:mm:ss') {
-    if (!value) {
-      return
-    }
-    if (!(value instanceof Date)) {
-      value = new Date(value)
-    }
-    return dayjs(value).format(format)
-  },
-
   codeFormat(value, typeCode) {
     const store = useStore()
     const codeMap = store.code.maps[typeCode]
@@ -17,6 +7,16 @@ export default {
       return names.join('，')
     }
     return codeMap[value]
+  },
+
+  dateFormat(value, format = 'YYYY-MM-DD HH:mm:ss') {
+    if (!value) {
+      return
+    }
+    if (!(value instanceof Date)) {
+      value = new Date(value)
+    }
+    return dayjs(value).format(format)
   },
 
   numberToCurrency(value) {

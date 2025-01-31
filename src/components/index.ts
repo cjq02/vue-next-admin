@@ -6,11 +6,14 @@ import EditableCell from '@/components/EditableCell/index.vue'
 import EditableItem from '@/components/EditableItem/index.vue'
 import EditTable from '@/components/EditTable/index.vue'
 import FormWrapper from '@/components/FormWrapper/index.vue'
+import ImageList from '@/components/ImageList/index.vue'
 import ImportButton from '@/components/ImportButton/index.vue'
 import MultiUpload from '@/components/MultiUpload/index.vue'
 import PagingSelect from '@/components/PagingSelect/index.vue'
 import TableComb from '@/components/TableComb/index.vue'
 import TEditor from '@/components/TEditor/index.vue'
+import Timeline from '@/components/Timeline/index.vue'
+import TimelineItem from '@/components/Timeline/timeLineItem.vue'
 import TooltipOver from '@/components/TooltipOver/index.vue'
 import SvgIcon from '@/icons/SvgIcon.vue'
 
@@ -29,6 +32,9 @@ export default {
     Vue.component('EditTable', EditTable)
     Vue.component('TooltipOver', TooltipOver)
     Vue.component('CountUp', CountUp)
+    Vue.component('ImageList', ImageList)
+    Vue.component('Timeline', Timeline)
+    Vue.component('TimelineItem', TimelineItem)
 
     for (const iconName in icons) {
       Vue.component(iconName, icons[iconName])

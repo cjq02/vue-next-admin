@@ -54,7 +54,7 @@ instance.interceptors.response.use(
     if (error.response) {
       if (error.response.status === 401) {
         const userStore = useUserStore()
-        await userStore.resetToken()
+        userStore.resetToken()
         // todo 暂时这么改
         setTimeout(() => {
           location.href = Constants.SYSTEM_URL.BASE

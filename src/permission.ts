@@ -2,6 +2,8 @@ import 'nprogress/nprogress.css'
 
 import nProgress from 'nprogress'
 
+import useUserStore from '@/store/user.store'
+
 import router from './router'
 // NProgress Configuration
 nProgress.configure({ showSpinner: false })

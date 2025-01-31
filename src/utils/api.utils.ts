@@ -14,11 +14,21 @@ export const API_PREFIX = '/' + import.meta.env.VITE_APP_BASE_API
 /**
  * 附件上传地址
  */
-export const uploadUrl = API_PREFIX + '/file/upload.json'
+export const UPLOAD_URL = API_PREFIX + '/file/upload.json'
 /**
  * 附件下载地址
  */
-export const downloadUrl = API_PREFIX + '/file/download.json'
+export const DOWNLOAD_URL = API_PREFIX + '/file/download.json'
+/**
+ * 上传文件夹路径
+ */
+export const UPLOAD_DIR_URL = ''
+/**
+ * 获取文件路径
+ *
+ * @param url
+ */
+export const getFullFileUrl = (url) => `${API_PREFIX}/${url.split('/').slice(-2).join('/')}`
 /**
  * 下载文件
  * */
@@ -100,7 +110,7 @@ export function post<Response = any, Request = any>(url, data: Request) {
     data,
     method: 'post',
     url,
-  }) as Response
+  }) as Promise<Response>
 }
 
 /**
@@ -150,11 +160,11 @@ export async function getBasePageList(url, params, method) {
 /**
  * 获取列表
  */
-export const getPageList = (url, params) => apiUtils.getBasePageList(url, params, 'get')
+export const getPageList = (url, params, pageInfo) => apiUtils.getBasePageList(url, { ...params, ...pageInfo }, 'get')
 /**
  * 获取列表post
  */
-export const postPageList = (url, data) => apiUtils.getBasePageList(url, data, 'post')
+export const postPageList = (url, data, pageInfo?) => apiUtils.getBasePageList(url, { ...data, ...pageInfo }, 'post')
 /**
  * 根据ID获取数据方法
  * */
@@ -185,7 +195,7 @@ export function getAction(url, { idKeyName = 'id' } = {}) {
 /**
  * 删除
  * */
-export function remove(id, url, method = 'post') {
+export function remove(url, id, method = 'post') {
   // @ts-ignore
   return request({
     method,
@@ -278,7 +288,7 @@ export async function getSelectList(
     value = 'id',
     label = 'name',
     getDisabled = (item) => false,
-  } = {},
+  } = {} as any,
 ) {
   if (condition) {
     // @ts-ignore
@@ -339,7 +349,54 @@ export function postList(vo, url) {
     url: url,
   })
 }
+/**
+ * 模版打印-导出1
+ * */
+export function exportGeneratorHtml(json) {
+  const formData = new FormData()
+  formData.append('json', json)
+  return post<Http.IResponseResult>('/export/generatorHtml.json', formData)
+}
+/**
+ * 模版打印-导出2
+ * */
+export function exportGeneratorPageHtml(json) {
+  const formData = new FormData()
+  formData.append('json', json)
+  return post<Http.IResponseResult>('/export/generatorPageHtml.json', formData)
+}
+/**
+ * 模版打印
+ * */
+export function printGeneratorHtml(tableEl, name) {
+  // 创建iframe元素
+  const iframe = document.createElement('iframe')
+  iframe.setAttribute('id', 'iframe')
+  iframe.setAttribute('width', '1200px;')
+  iframe.setAttribute('height', '800px;')
+  /* iframe.setAttribute('style', 'display:none')*/
+  document.body.appendChild(iframe)
+  const doc = iframe.contentWindow!.document
+  const oldDocumentName = document.title
+  if (name) {
+    document.title = name
+  }
+  doc.write(tableEl)
+  doc.close()
+  iframe.contentWindow!.focus()
+  iframe.onload = async function () {
+    iframe.contentWindow!.print()
+    // 打印完毕后移除
+    iframe.parentNode!.removeChild(iframe)
+    await nextTick(() => {
+      if (name) {
+        document.title = oldDocumentName
+      }
+    })
+  }
 
+  // 调用打印
+}
 export async function exportExcel(htmlContent, fileName) {
   fileName = fileName + '.xls'
   const formData = new FormData()
