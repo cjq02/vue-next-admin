@@ -213,7 +213,7 @@ const state = reactive({
   rules: {
     name: [
       { required: true, message: '请输入菜单名称', trigger: 'blur' },
-      { min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur' },
+      { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' },
     ],
     permissionPrefixCode: [
       { required: true, message: '请输入权限前缀码', trigger: 'blur' },

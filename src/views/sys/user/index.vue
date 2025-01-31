@@ -19,12 +19,12 @@
           <!--高级查询-->
           <template #baseSearchForm="props">
             <el-col :span="8">
-              <el-form-item label="用户名:" label-width="80px">
+              <el-form-item label="User Name:" label-width="100px">
                 <el-input
                   v-model="props.form.userName"
                   size="small"
                   clearable
-                  placeholder="请输入用户名/工号/姓名/手机号"
+                  placeholder="please fill in"
                 />
               </el-form-item>
             </el-col>

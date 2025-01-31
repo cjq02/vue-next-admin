@@ -18,7 +18,6 @@ export const constantRoutes = [
       {
         // @ts-ignore
         component: () => import('@/views/redirect'),
-
         path: '/redirect/:path(.*)',
       },
     ],
@@ -39,7 +38,7 @@ export const constantRoutes = [
     children: [
       {
         component: () => import('@/views/home/index.vue'),
-        meta: { affix: true, icon: 'Home', title: '首页' },
+        meta: { affix: true, icon: 'Home', title: 'Home' },
         name: 'Home',
         parentHidden: true,
         path: 'home',

@@ -13,7 +13,7 @@
     <!--nav title-->
     <div v-if="settings.showNavbarTitle" class="heardCenterTitle">{{ settings.title }}</div>
     <div v-if="settings.showDropdown" class="right-menu rowSC">
-      <el-button style="margin-top: 5px" type="primary" text @click="downloadFile">操作手册</el-button>
+<!--      <el-button style="margin-top: 5px" type="primary" text @click="downloadFile">操作手册</el-button>-->
       <el-button style="margin-top: 5px" type="primary" text class="ml20 mr10" @click="dialogVisible = true">
         咨询电话
       </el-button>
